@@ -1,0 +1,53 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 25
+    buildToolsVersion "25.0.2"
+    defaultConfig {
+        applicationId "com.example.km1930.finddiskpath"
+        minSdkVersion 15
+        targetSdkVersion 25
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+//打包重命名
+    android.applicationVariants.all {
+        variant ->
+            variant.outputs.each {
+                output ->
+                    //release版本重命名
+                    if (variant.buildType.name.equals('release')) {
+                        output.outputFile = new File(output.outputFile.parent,
+                                "finddiskpath" + "-" + variant.versionCode
+                                        + "_v" + variant.versionName
+                                        + ".apk");
+                    } else if (variant.buildType.name.equals('debug')) {
+                        output.outputFile = new File(output.outputFile.parent,
+                                "finddiskpath" + "-" + variant.versionCode
+                                        + "_v" + variant.versionName
+//                                        + "_v" + variant.versionName.substring(variant.versionName.lastIndexOf(variant.versionCode + ""))
+                                        + ".apk")
+                    }
+            }
+    }
+    productFlavors {
+        flavor {
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(include: ['*.jar'], dir: 'libs')
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+    compile 'com.android.support:appcompat-v7:25.2.0'
+    testCompile 'junit:junit:4.12'
+}
