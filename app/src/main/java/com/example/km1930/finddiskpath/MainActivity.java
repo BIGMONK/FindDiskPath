@@ -13,37 +13,45 @@ import android.view.Display;
 import android.view.WindowManager;
 import android.widget.ListView;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
     private BroadcastReceiver receiver;
     private ListViewAdapter adapter;
+    private ArrayList<String> diskPath;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        final ListView listView = (ListView) findViewById(R.id.lv);
+        ListView listView = (ListView) findViewById(R.id.lv);
         final ArrayList<String> list = new ArrayList<>();
         adapter = new ListViewAdapter(list, this);
         listView.setAdapter(adapter);
-
+//
+        final List<String> actions = new ArrayList<>();
+        final List<String> mountedActions = new ArrayList<>();
+        mountedActions.add(Intent.ACTION_MEDIA_MOUNTED);
+        mountedActions.add(Intent.ACTION_MEDIA_CHECKING);
+        final List<String> unmountedActions = new ArrayList<>();
+        unmountedActions.add(Intent.ACTION_MEDIA_UNMOUNTED);
+        unmountedActions.add(Intent.ACTION_MEDIA_EJECT);
         receiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-
-                System.out.println("BroadcastReceiver getAction" + intent.getAction() +
-                        "  getData=" + intent.getData());
-
-                finddisk(listView);
-
+//                Toast.makeText(MainActivity.this, "intent.getAction()=" + intent.getAction(),
+//                        Toast.LENGTH_SHORT).show();
+                actions.add(intent.getAction());
+                if (actions.containsAll(unmountedActions) || actions.containsAll(mountedActions)) {
+                    actions.clear();
+                    list.removeAll(diskPath);
+                    diskPath = FileUtils.getDiskPath();
+                    list.addAll(diskPath);
+                    adapter.notifyDataSetChanged();
+                }
             }
         };
         IntentFilter filter = new IntentFilter();
@@ -56,7 +64,51 @@ public class MainActivity extends AppCompatActivity {
 //        <action android:name="android.hardware.usb.action.USB_STATE" />
         filter.addDataScheme("file"); // 必须要有此行，否则无法收到广播
         registerReceiver(receiver, filter);
-        finddisk(listView);
+
+
+        //TODO 获取  MAC
+        list.add("getWifiMAC:" + getWifiMAC(this));
+        list.add("getFirstMAC:" + NetWorkUtils.getMAC() + "  " + NetWorkUtils.getIp());
+        list.add("*****************************************");
+        //TODO 获取屏幕参数
+        WindowManager windowManager = getWindowManager();
+        Display display = windowManager.getDefaultDisplay();
+        list.add("屏幕参数1:" + display.toString());
+        list.add("*****************************************");
+        DisplayMetrics dm = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(dm);
+        float density = dm.density;
+        int densityDpi = dm.densityDpi;
+        float scaledDensity = dm.scaledDensity;
+        float xdpi = dm.xdpi;
+        float ydpi = dm.ydpi;
+        int heightPixels = dm.heightPixels;
+        int widthPixels = dm.widthPixels;
+        list.add("屏幕参数2:" + dm.toString() +
+                "  density=" + density +
+                "  densityDpi=" + densityDpi +
+                "  scaledDensity=" + scaledDensity +
+                "  xdpi=" + xdpi +
+                "  ydpi=" + ydpi +
+                "  widthPixels=" + widthPixels +
+                "  heightPixels=" + heightPixels);
+        list.add("*****************************************");
+
+
+        //TODO 获取系统信息
+        list.add("系统信息Product Model: " + getSysInfo());
+        list.add("*****************************************");
+        list.add("UUID:" + DeviceIdUtils.getDeviceUuid(this).toString());
+        list.add("*****************************************");
+        list.add("SERIAL=" + DeviceIdUtils.getSerial());
+        list.add("*****************************************");
+        list.add("ANDROID_ID=" + DeviceIdUtils.getAndroidId(this));
+        list.add("*****************************************");
+
+        //TODO 获取可用存储位置和大小
+        diskPath = FileUtils.getDiskPath();
+        list.addAll(diskPath);
+        adapter.notifyDataSetChanged();
 
 
     }
@@ -66,93 +118,71 @@ public class MainActivity extends AppCompatActivity {
         return wm.getConnectionInfo().getMacAddress();
     }
 
-    private void finddisk(ListView listView) {
-        ArrayList<String> list = new ArrayList<>();
-        try {
-            File file = new File("/proc/mounts");
-            if (file.canRead()) {
-                BufferedReader reader = null;
-                reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
-                String lines;
-                while ((lines = reader.readLine()) != null) {
-                    String[] parts = lines.split("\\s+");
-//                    list.add(lines);
-                    if (parts.length >= 2 && parts[0].contains("vold") || parts[0].contains
-                            ("fuse")) {
-                        File file1 = new File(parts[1]);
-                        list.add(lines);
-                        list.add(file1.getAbsolutePath() + "###########getFreeSpace  =" + file1
-                                .getFreeSpace());
-                        list.add(file1.getAbsolutePath() + "###########getUsableSpace=" + file1
-                                .getUsableSpace());
-                        list.add("*****************************************");
-//                        adapter.notifyDataSetChanged();
-                        adapter = new ListViewAdapter(list, this);
-                        listView.setAdapter(adapter);
-                    }
-                }
-                //wifi  MAC
-                list.add("getWifiMAC:" + getWifiMAC(this));
-                list.add("getFirstMAC:" + NetWorkUtils.getMAC()+"  "+NetWorkUtils.getIp());
-
-                list.add("*****************************************");
-
-                WindowManager windowManager = getWindowManager();
-                Display display = windowManager.getDefaultDisplay();
-                int screenWidth = display.getWidth();
-                int screenHeight = display.getHeight();
-                list.add("屏幕参数1:" + display.toString());
-                list.add("*****************************************");
-
-                // 方法2
-                DisplayMetrics dm = new DisplayMetrics();
-                getWindowManager().getDefaultDisplay().getMetrics(dm);
-                float density = dm.density;
-                int densityDpi = dm.densityDpi;
-                float scaledDensity = dm.scaledDensity;
-                float xdpi = dm.xdpi;
-                float ydpi = dm.ydpi;
-                int heightPixels = dm.heightPixels;
-                int widthPixels = dm.widthPixels;
-                list.add("屏幕参数2:" + dm.toString()+
-                        "  density="+density+
-                        "  densityDpi="+densityDpi+
-                        "  scaledDensity="+scaledDensity+
-                        "  xdpi="+xdpi+
-                        "  ydpi="+ydpi+
-                        "  widthPixels="+widthPixels+
-                        "  heightPixels="+heightPixels+
-                        "\n " + "Product Model: " +
-                        "\n " + "Build.MODEL:" + Build.MODEL +
-                        "\n " + "Build.VERSION.SDK: " + Build.VERSION.SDK +
-                        "\n " + "Build.VERSION.SDK_INT:" + Build.VERSION.SDK_INT +
-                        "\n " + "Build.VERSION.RELEASE=" + Build.VERSION.RELEASE +
-                        "\n " + "Build.VERSION.SDK: " + Build.VERSION.BASE_OS +
-                        "\n " + "Build.VERSION.CODENAME: " + Build.VERSION.CODENAME +
-                        "\n " + "Build.VERSION.INCREMENTAL:" + Build.VERSION.INCREMENTAL +
-                        "\n " + "Build.VERSION.SECURITY_PATCH:" + Build.VERSION.SECURITY_PATCH +
-                        ""
-
-                );
-
-
-                list.add("*****************************************");
-                list.add("UUID:" + DeviceIdUtils.getDeviceUuid(this).toString());
-                list.add("*****************************************");
-                list.add("SERIAL=" + DeviceIdUtils.getSerial());
-                list.add("*****************************************");
-                list.add("ANDROID_ID=" + DeviceIdUtils.getAndroidId(this));
-
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
         unregisterReceiver(receiver);
+    }
+
+    public String getSysInfo() {
+        StringBuilder sb = new StringBuilder();
+        try {
+            sb.append("\n " + "Build.MODEL:" + Build.MODEL);
+        } catch (Exception e) {
+            e.printStackTrace();
+            sb.append("\n " + "Build.MODEL:" + e.getMessage());
+        }
+        try {
+            sb.append("\n " + "Build.VERSION.SDK:" + Build.VERSION.SDK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            sb.append("\n " + "Build.VERSION.SDK:" + e.getMessage());
+        }
+        try {
+            sb.append("\n " + "Build.VERSION.SDK_INT:" + Build.VERSION.SDK_INT);
+        } catch (Exception e) {
+            e.printStackTrace();
+            sb.append("\n " + "Build.VERSION.SDK_INT:" + e.getMessage());
+        }
+        try {
+            sb.append("\n " + "Build.VERSION.RELEASE:" + Build.VERSION.RELEASE);
+        } catch (Exception e) {
+            e.printStackTrace();
+            sb.append("\n " + "Build.VERSION.RELEASE:" + e.getMessage());
+        }
+        try {
+            sb.append("\n " + "Build.VERSION.CODENAME:" + Build.VERSION.CODENAME);
+        } catch (Exception e) {
+            e.printStackTrace();
+            sb.append("\n " + "Build.VERSION.CODENAME:" + e.getMessage());
+        }
+        try {
+            sb.append("\n " + "Build.VERSION.BASE_OS:" + Build.VERSION.BASE_OS);//部分系统导致崩溃
+        } catch (Exception e) {
+            e.printStackTrace();
+            sb.append("\n " + "Build.VERSION.BASE_OS:" + e.getMessage());
+        }
+        try {
+//            sb.append("\n " + "Build.VERSION.SECURITY_PATCH:" + Build.VERSION.SECURITY_PATCH);
+            // 部分系统导致崩溃
+        } catch (Exception e) {
+            e.printStackTrace();
+            sb.append("\n " + "Build.VERSION.SECURITY_PATCH:" + e.getMessage());
+        }
+        sb.append("\nProduct: " + android.os.Build.PRODUCT);
+        sb.append("\nCPU_ABI: " + android.os.Build.CPU_ABI);
+        sb.append("\nTAGS: " + android.os.Build.TAGS);
+        sb.append("\nVERSION_CODES.BASE: "
+                + android.os.Build.VERSION_CODES.BASE);
+        sb.append("\nDEVICE: " + android.os.Build.DEVICE);
+        sb.append("\nDISPLAY: " + android.os.Build.DISPLAY);
+        sb.append("\nBRAND: " + android.os.Build.BRAND);
+        sb.append("\nBOARD: " + android.os.Build.BOARD);
+        sb.append("\nFINGERPRINT: " + android.os.Build.FINGERPRINT);
+        sb.append("\nID: " + android.os.Build.ID);
+        sb.append("\nMANUFACTURER: " + android.os.Build.MANUFACTURER);
+        sb.append("\nUSER: " + android.os.Build.USER);
+
+        return sb.toString();
     }
 }

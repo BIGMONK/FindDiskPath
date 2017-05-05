@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
+import java.io.File;
 import java.util.List;
 
 /**
@@ -50,8 +51,19 @@ public class ListViewAdapter extends BaseAdapter {
         } else {
             viewHolder = (ViewHolder) convertView.getTag();
         }
-        viewHolder.tv.setText(datas.get(position));
 
+        StringBuffer msg = new StringBuffer();
+        String data = datas.get(position);
+        msg.append(data);
+        File file1 = new File(data);
+        if (file1.exists()) {
+            msg.insert(0,"路径：");
+            if (file1.getTotalSpace() > 0) {
+                msg.append("  总空间：" + FileUtils.formatFileSize(file1.getTotalSpace(),false) +
+                        "  可用空间：" + FileUtils.formatFileSize(file1.getFreeSpace(),false));
+            }
+        }
+        viewHolder.tv.setText(msg.toString());
         return convertView;
     }
 
