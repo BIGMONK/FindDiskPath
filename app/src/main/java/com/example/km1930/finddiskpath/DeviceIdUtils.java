@@ -70,7 +70,7 @@ public class DeviceIdUtils {
     }
 
     /**
-     * 设备序列号 。唯一
+     * 设备序列号 。唯一，设备恢复出厂设置不会改变
      *
      * @return
      */
@@ -79,7 +79,7 @@ public class DeviceIdUtils {
     }
 
     /**
-     * ANDROID_ID
+     * ANDROID_ID  设备恢复出厂设置会改变
      *
      * @param context
      * @return

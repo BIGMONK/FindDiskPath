@@ -1,22 +1,28 @@
 package com.example.km1930.finddiskpath;
 
+import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.Resources;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Display;
+import android.view.View;
 import android.view.WindowManager;
+import android.widget.AdapterView;
 import android.widget.ListView;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements AdapterView.OnItemClickListener {
 
     private BroadcastReceiver receiver;
     private ListViewAdapter adapter;
@@ -31,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
         final ArrayList<String> list = new ArrayList<>();
         adapter = new ListViewAdapter(list, this);
         listView.setAdapter(adapter);
+        listView.setOnItemClickListener(this);
 //
         final List<String> actions = new ArrayList<>();
         final List<String> mountedActions = new ArrayList<>();
@@ -105,12 +112,35 @@ public class MainActivity extends AppCompatActivity {
         list.add("ANDROID_ID=" + DeviceIdUtils.getAndroidId(this));
         list.add("*****************************************");
 
+        Runtime rt=Runtime.getRuntime();
+        long maxMemory=rt.maxMemory();
+        list.add("app可使用的最大memory size=" + Long.toString(maxMemory/(1024*1024)));
+        ActivityManager am = (ActivityManager)getSystemService(Context.ACTIVITY_SERVICE);
+        int memoryClass = am. getMemoryClass();
+        int largeMemoryClass = am. getLargeMemoryClass();
+        list.add("系统对应用的内存限制的值 heapgrowthlimit=" +memoryClass);
+        list.add("系统可提供给应用的最大内存 heapsize=" + largeMemoryClass);
+        list.add("*****************************************");
+
         //TODO 获取可用存储位置和大小
         diskPath = FileUtils.getDiskPath();
         list.addAll(diskPath);
         adapter.notifyDataSetChanged();
 
+        int lebId = Resources.getSystem()
+                .getIdentifier("permlab_accessNetworkState",
+                        "string", "android");
+        String lab = getString(lebId);
 
+        DecimalFormat df1 = new DecimalFormat("0.0");
+        DecimalFormat df2 = new DecimalFormat("#.#");
+        DecimalFormat df3 = new DecimalFormat("000.000");
+        DecimalFormat df4 = new DecimalFormat("###.###");
+
+        System.out.println("数据格式刷："+df1.format(12.34));
+        System.out.println("数据格式刷："+df2.format(12.34));
+        System.out.println("数据格式刷："+df3.format(12.34));
+        System.out.println("数据格式刷："+df4.format(12.34));
     }
 
     public static String getWifiMAC(Context context) {
@@ -130,59 +160,67 @@ public class MainActivity extends AppCompatActivity {
             sb.append("\n " + "Build.MODEL:" + Build.MODEL);
         } catch (Exception e) {
             e.printStackTrace();
-            sb.append("\n " + "Build.MODEL:" + e.getMessage());
+            sb.append("    " + "Build.MODEL:" + e.getMessage());
         }
         try {
-            sb.append("\n " + "Build.VERSION.SDK:" + Build.VERSION.SDK);
+            sb.append("    " + "Build.VERSION.SDK:" + Build.VERSION.SDK);
         } catch (Exception e) {
             e.printStackTrace();
-            sb.append("\n " + "Build.VERSION.SDK:" + e.getMessage());
+            sb.append("    " + "Build.VERSION.SDK:" + e.getMessage());
         }
         try {
-            sb.append("\n " + "Build.VERSION.SDK_INT:" + Build.VERSION.SDK_INT);
+            sb.append("    " + "Build.VERSION.SDK_INT:" + Build.VERSION.SDK_INT);
         } catch (Exception e) {
             e.printStackTrace();
-            sb.append("\n " + "Build.VERSION.SDK_INT:" + e.getMessage());
+            sb.append("    " + "Build.VERSION.SDK_INT:" + e.getMessage());
         }
         try {
-            sb.append("\n " + "Build.VERSION.RELEASE:" + Build.VERSION.RELEASE);
+            sb.append("    " + "Build.VERSION.RELEASE:" + Build.VERSION.RELEASE);
         } catch (Exception e) {
             e.printStackTrace();
-            sb.append("\n " + "Build.VERSION.RELEASE:" + e.getMessage());
+            sb.append("    " + "Build.VERSION.RELEASE:" + e.getMessage());
         }
         try {
-            sb.append("\n " + "Build.VERSION.CODENAME:" + Build.VERSION.CODENAME);
+            sb.append("    " + "Build.VERSION.CODENAME:" + Build.VERSION.CODENAME);
         } catch (Exception e) {
             e.printStackTrace();
-            sb.append("\n " + "Build.VERSION.CODENAME:" + e.getMessage());
+            sb.append("    " + "Build.VERSION.CODENAME:" + e.getMessage());
         }
-        try {
-            sb.append("\n " + "Build.VERSION.BASE_OS:" + Build.VERSION.BASE_OS);//部分系统导致崩溃
+        try {//部分系统崩溃
+//            sb.append("\n " + "Build.VERSION.BASE_OS:" + Build.VERSION.BASE_OS);
         } catch (Exception e) {
             e.printStackTrace();
-            sb.append("\n " + "Build.VERSION.BASE_OS:" + e.getMessage());
+            sb.append("    " + "Build.VERSION.BASE_OS:" + e.getMessage());
         }
-        try {
-//            sb.append("\n " + "Build.VERSION.SECURITY_PATCH:" + Build.VERSION.SECURITY_PATCH);
-            // 部分系统导致崩溃
+        try {  // 部分系统导致崩溃
+        //sb.append("\n " + "Build.VERSION.SECURITY_PATCH:" + Build.VERSION.SECURITY_PATCH);//部分系统崩溃
         } catch (Exception e) {
             e.printStackTrace();
-            sb.append("\n " + "Build.VERSION.SECURITY_PATCH:" + e.getMessage());
+            sb.append("    " + "Build.VERSION.SECURITY_PATCH:" + e.getMessage());
         }
-        sb.append("\nProduct: " + android.os.Build.PRODUCT);
-        sb.append("\nCPU_ABI: " + android.os.Build.CPU_ABI);
-        sb.append("\nTAGS: " + android.os.Build.TAGS);
-        sb.append("\nVERSION_CODES.BASE: "
+        sb.append("   Product: " + android.os.Build.PRODUCT);
+        sb.append("   CPU_ABI: " + android.os.Build.CPU_ABI);
+        sb.append("   TAGS: " + android.os.Build.TAGS);
+        sb.append("   VERSION_CODES.BASE: "
                 + android.os.Build.VERSION_CODES.BASE);
-        sb.append("\nDEVICE: " + android.os.Build.DEVICE);
-        sb.append("\nDISPLAY: " + android.os.Build.DISPLAY);
-        sb.append("\nBRAND: " + android.os.Build.BRAND);
-        sb.append("\nBOARD: " + android.os.Build.BOARD);
-        sb.append("\nFINGERPRINT: " + android.os.Build.FINGERPRINT);
-        sb.append("\nID: " + android.os.Build.ID);
-        sb.append("\nMANUFACTURER: " + android.os.Build.MANUFACTURER);
-        sb.append("\nUSER: " + android.os.Build.USER);
+        sb.append("   DEVICE: " + android.os.Build.DEVICE);
+        sb.append("   DISPLAY: " + android.os.Build.DISPLAY);
+        sb.append("   BOARD: " + android.os.Build.BOARD);
+        sb.append("   FINGERPRINT: " + android.os.Build.FINGERPRINT);
+        sb.append("   ID: " + android.os.Build.ID);
+        sb.append("   MANUFACTURER: " + android.os.Build.MANUFACTURER);
+        sb.append("   USER: " + android.os.Build.USER);
+        sb.append("   SERIAL: " + Build.SERIAL);
+              return sb.toString();
+    }
 
-        return sb.toString();
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        Log.d("点击测试", "parent.getClass().getName():"+parent.getClass().getName()
+                +"  parent.getId():"+parent.getId()
+                +"  view.getClass().getName():"+view.getClass().getName()
+                +"  view.getId():"+view.getId()
+                +"  position:"+position
+                +"  id："+id);
     }
 }

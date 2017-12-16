@@ -57,10 +57,12 @@ public class ListViewAdapter extends BaseAdapter {
         msg.append(data);
         File file1 = new File(data);
         if (file1.exists()) {
-            msg.insert(0,"路径：");
+            msg.insert(0, "路径：");
             if (file1.getTotalSpace() > 0) {
-                msg.append("  总空间：" + FileUtils.formatFileSize(file1.getTotalSpace(),false) +
-                        "  可用空间：" + FileUtils.formatFileSize(file1.getFreeSpace(),false));
+                msg.append("  TotalSpace：" + FileUtils.formatFileSize(file1.getTotalSpace(), false)
+                        + "  FreeSpace：" + FileUtils.formatFileSize(file1.getFreeSpace(), false)
+                        + "  UsableSpace：" + FileUtils.formatFileSize(file1.getUsableSpace(), false)
+                );
             }
         }
         viewHolder.tv.setText(msg.toString());

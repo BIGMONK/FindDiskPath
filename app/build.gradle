@@ -1,6 +1,9 @@
+import java.text.SimpleDateFormat
+
 apply plugin: 'com.android.application'
 
 android {
+    String time = new SimpleDateFormat("yyMMddHH").format(System.currentTimeMillis());
     signingConfigs {
         config {
             keyAlias 'finddiskpath'
@@ -13,12 +16,13 @@ android {
     buildToolsVersion "23.0.3"
     defaultConfig {
         applicationId "com.example.km1930.finddiskpath"
-        minSdkVersion 18
+        minSdkVersion 11
         targetSdkVersion 22
-        versionCode 3
-        versionName "1.0"
+        versionCode 4
+        versionName '1.' + time + '.' + versionCode
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         signingConfig signingConfigs.config
+
     }
     buildTypes {
         release {
